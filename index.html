@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How much of your money is pending?</title>
+<meta name="description" content="Paste your unpaid invoices. Get the one card every freelancer posts.">
+<style>
+  :root { color-scheme: dark; --red:#ff4d5e; --cream:#fff4e6; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #12100f; color: #f4efe8; min-height: 100vh; overflow-x: hidden;
+    padding: 0 16px 80px;
+  }
+  .glow {
+    position: fixed; border-radius: 50%; filter: blur(90px); opacity: .5; z-index: 0; pointer-events: none;
+    animation: drift 14s ease-in-out infinite alternate;
+  }
+  .glow.a { width: 420px; height: 420px; background: #ff4d5e; top: -140px; left: -120px; }
+  .glow.b { width: 380px; height: 380px; background: #ffb43a; bottom: -160px; right: -100px; animation-delay: -7s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.15); } }
+  header { position: relative; z-index: 1; text-align: center; padding: 64px 0 40px; }
+  .badge {
+    display: inline-block; background: var(--red); color: #fff; font-weight: 800; font-size: 13px;
+    letter-spacing: 2px; padding: 8px 16px; border-radius: 999px; transform: rotate(-2deg);
+    box-shadow: 0 6px 0 rgba(0,0,0,.35); margin-bottom: 22px;
+  }
+  h1 { font-size: clamp(34px, 6vw, 56px); font-weight: 900; letter-spacing: -1.5px; line-height: 1.05; max-width: 640px; margin: 0 auto; }
+  h1 .mark { color: var(--red); position: relative; display: inline-block; transform: rotate(-1.5deg); }
+  h1 .mark::after {
+    content: ""; position: absolute; left: -4px; right: -4px; bottom: 4px; height: 12px;
+    background: rgba(255,180,58,.4); z-index: -1; border-radius: 4px; transform: rotate(-1deg);
+  }
+  .sub { color: #b8ada0; font-size: 17px; margin: 16px auto 0; max-width: 460px; line-height: 1.55; }
+  .wrap {
+    position: relative; z-index: 1; display: flex; gap: 32px; flex-wrap: wrap;
+    justify-content: center; align-items: flex-start; max-width: 1040px; margin: 0 auto;
+  }
+  .panel {
+    background: rgba(30,26,24,.85); border: 1px solid rgba(255,255,255,.08); border-radius: 24px;
+    padding: 26px; width: 400px; max-width: 100%; backdrop-filter: blur(6px);
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  }
+  label { display: block; font-size: 13px; font-weight: 700; color: #b8ada0; margin: 18px 0 7px; letter-spacing: .3px; }
+  label:first-of-type { margin-top: 0; }
+  textarea, input {
+    width: 100%; background: #12100f; border: 1px solid rgba(255,255,255,.14); border-radius: 14px;
+    color: #f4efe8; font-size: 15px; padding: 13px 14px; font-family: inherit; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  textarea { min-height: 150px; resize: vertical; line-height: 1.55; }
+  textarea:focus, input:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(255,77,94,.15); }
+  .hint { font-size: 12px; color: #8d8378; margin-top: 7px; line-height: 1.5; }
+  .stats { display: flex; gap: 10px; margin-top: 18px; }
+  .stat {
+    flex: 1; background: #12100f; border: 1px solid rgba(255,255,255,.09); border-radius: 14px;
+    padding: 12px 8px; text-align: center; transition: transform .15s;
+  }
+  .stat:hover { transform: translateY(-3px) rotate(-1deg); }
+  .stat b { display: block; font-size: 18px; font-weight: 900; color: var(--cream); white-space: nowrap; }
+  .stat span { font-size: 11px; color: #8d8378; font-weight: 600; }
+  button {
+    width: 100%; margin-top: 16px; padding: 15px; border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit;
+    transition: transform .12s, box-shadow .12s, background .2s;
+  }
+  .btn-primary {
+    background: var(--red); color: #fff; box-shadow: 0 6px 0 #a8202f;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #a8202f; }
+  .btn-primary:active { transform: translateY(3px); box-shadow: 0 2px 0 #a8202f; }
+  .btn-x { background: transparent; color: #f4efe8; border: 1.5px solid rgba(255,255,255,.18); }
+  .btn-x:hover { border-color: var(--red); color: var(--red); transform: translateY(-2px); }
+  .cardbox { position: sticky; top: 24px; }
+  .cardframe {
+    background: rgba(30,26,24,.85); border: 1px solid rgba(255,255,255,.08); border-radius: 24px;
+    padding: 16px; backdrop-filter: blur(6px); box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    transform: rotate(1.2deg); transition: transform .25s;
+  }
+  .cardframe:hover { transform: rotate(0deg) scale(1.01); }
+  canvas { border-radius: 14px; display: block; max-width: 100%; height: auto; }
+  .strip { position: relative; z-index: 1; max-width: 640px; margin: 56px auto 0; text-align: center; }
+  .strip p { color: #b8ada0; font-size: 15px; line-height: 1.6; }
+  .strip b { color: var(--cream); }
+  footer { position: relative; z-index: 1; margin-top: 40px; text-align: center; color: #6f665c; font-size: 13px; }
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #2a241f; color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 14px;
+    font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    z-index: 5; box-shadow: 0 12px 30px rgba(0,0,0,.5);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <div class="glow a"></div><div class="glow b"></div>
+  <header>
+    <div class="badge">FREELANCER THERAPY</div>
+    <h1>How much of your money is <span class="mark">pending?</span></h1>
+    <p class="sub">Paste your unpaid invoices. Watch the pain become a card worth posting. 30 seconds, nothing leaves your browser.</p>
+  </header>
+  <div class="wrap">
+    <div class="panel">
+      <label for="invoices">Your unpaid invoices</label>
+      <textarea id="invoices" spellcheck="false"></textarea>
+      <div class="hint">One invoice per line. Amount alone, or client name then amount (comma, colon, tab or space between). Commas and the rupee sign in amounts are fine.</div>
+      <label for="handle">Your X handle (optional)</label>
+      <input id="handle" type="text" placeholder="@yourhandle" maxlength="20">
+      <div class="stats">
+        <div class="stat"><b id="sCount">0</b><span>invoices</span></div>
+        <div class="stat"><b id="sTotal">&#8377;0</b><span>total pending</span></div>
+        <div class="stat"><b id="sBig">&#8377;0</b><span>biggest one</span></div>
+      </div>
+      <button class="btn-primary" id="download">Download card</button>
+      <button class="btn-x" id="postX">Copy post text &amp; open X</button>
+    </div>
+    <div class="cardbox">
+      <div class="cardframe"><canvas id="card" width="1200" height="1500"></canvas></div>
+    </div>
+  </div>
+  <div class="strip">
+    <p><b>Why post it?</b> Because half of freelancing is quietly chasing money you already earned. Say the number out loud and the next invoice gets taken a little more seriously. The biggest number in the replies wins nothing except sympathy. And sympathy is underrated.</p>
+  </div>
+  <footer>Nothing you type leaves this page. All the math happens in your browser.</footer>
+  <div class="toast" id="toast"></div>
+<script>
+// Set this to the live URL once deployed. Used in the share text.
+var TOOL_URL = "https://sauravsah.github.io/pending-card/";
+
+var DEMO = [
+  "Northstar Labs, 1,20,000",
+  "Zynga Media: 85,000",
+  "Retainer - October, 45000",
+  "Kettle and Co, 60000",
+  "Website revamp, 2,10,000"
+].join("\n");
+
+var invoicesEl = document.getElementById("invoices");
+var handleEl = document.getElementById("handle");
+var canvas = document.getElementById("card");
+var ctx = canvas.getContext("2d");
+
+invoicesEl.value = DEMO;
+
+function parseInvoices() {
+  var out = [];
+  var lines = invoicesEl.value.split("\n");
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var m = line.match(/[\d][\d,]*(?:\.\d+)?/);
+    if (!m) continue;
+    var amount = parseFloat(m[0].replace(/,/g, ""));
+    if (!isFinite(amount) || amount <= 0) continue;
+    var label = (line.slice(0, m.index) + " " + line.slice(m.index + m[0].length))
+      .replace(/[,:\-\t]+/g, " ").replace(/\s+/g, " ").trim();
+    out.push({ label: label, amount: amount });
+  }
+  return out;
+}
+
+function inr(n) {
+  return "\u20B9" + Math.round(n).toLocaleString("en-IN");
+}
+
+function shortInr(n) {
+  if (n >= 1e7) return "\u20B9" + (n / 1e7).toFixed(2).replace(/\.00$/, "") + " crore";
+  if (n >= 1e5) return "\u20B9" + (n / 1e5).toFixed(2).replace(/\.00$/, "") + " lakh";
+  return inr(n);
+}
+
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function () { t.classList.remove("show"); }, 2400);
+}
+
+var FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif";
+
+function draw() {
+  var inv = parseInvoices();
+  var total = inv.reduce(function (s, x) { return s + x.amount; }, 0);
+  var biggest = inv.reduce(function (s, x) { return Math.max(s, x.amount); }, 0);
+  var handle = handleEl.value.trim();
+
+  document.getElementById("sCount").textContent = inv.length;
+  document.getElementById("sTotal").textContent = shortInr(total);
+  document.getElementById("sBig").textContent = shortInr(biggest);
+
+  var W = canvas.width, H = canvas.height;
+  var g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#17130f");
+  g.addColorStop(0.6, "#1c1216");
+  g.addColorStop(1, "#241017");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(255,255,255,0.035)";
+  ctx.lineWidth = 1;
+  for (var x = 60; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (var y = 60; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // soft red glow blob top right
+  var rg = ctx.createRadialGradient(W * 0.85, H * 0.15, 40, W * 0.85, H * 0.15, 500);
+  rg.addColorStop(0, "rgba(255,77,94,0.18)");
+  rg.addColorStop(1, "rgba(255,77,94,0)");
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#ff4d5e";
+  ctx.fillRect(0, 0, W, 12);
+
+  ctx.textAlign = "center";
+  // sticker label
+  ctx.save();
+  ctx.translate(W / 2, 200);
+  ctx.rotate(-0.03);
+  ctx.fillStyle = "#ff4d5e";
+  var labW = 560, labH = 76;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-labW / 2, -labH / 2, labW, labH, 38); else ctx.rect(-labW / 2, -labH / 2, labW, labH);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 34px " + FONT;
+  ctx.fillText("M O N E Y   P E N D I N G", 0, 12);
+  ctx.restore();
+
+  var amountStr = inr(total);
+  var size = 195;
+  ctx.font = "900 " + size + "px " + FONT;
+  while (ctx.measureText(amountStr).width > W - 130 && size > 70) {
+    size -= 8;
+    ctx.font = "900 " + size + "px " + FONT;
+  }
+  ctx.fillStyle = "#fff4e6";
+  ctx.fillText(amountStr, W / 2, 440);
+
+  ctx.fillStyle = "#cfc4b6";
+  ctx.font = "600 52px " + FONT;
+  var verb = inv.length === 1 ? "invoice" : "invoices";
+  ctx.fillText("stuck with clients who owe me money", W / 2, 528);
+  ctx.fillStyle = "#8d8378";
+  ctx.font = "600 40px " + FONT;
+  ctx.fillText("across " + inv.length + " unpaid " + verb, W / 2, 596);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
+  ctx.beginPath();
+  ctx.moveTo(120, 688);
+  ctx.lineTo(W - 120, 688);
+  ctx.stroke();
+
+  var shown = inv.slice(0, 6);
+  var rowY = 768;
+  for (var i = 0; i < shown.length; i++) {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#a89e90";
+    ctx.font = "600 38px " + FONT;
+    var name = shown[i].label || ("Invoice " + (i + 1));
+    if (ctx.measureText(name).width > 620) name = name.slice(0, 30) + "\u2026";
+    ctx.fillText(name, 120, rowY);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#fff4e6";
+    ctx.font = "800 38px " + FONT;
+    ctx.fillText(inr(shown[i].amount), W - 120, rowY);
+    rowY += 76;
+  }
+  if (inv.length > 6) {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#6f665c";
+    ctx.font = "600 34px " + FONT;
+    ctx.fillText("+ " + (inv.length - 6) + " more", 120, rowY);
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#b8ada0";
+  ctx.font = "800 36px " + FONT;
+  ctx.fillText("how much of YOURS is pending?", 120, H - 150);
+  if (handle) {
+    ctx.fillStyle = "#ff4d5e";
+    ctx.font = "800 36px " + FONT;
+    ctx.textAlign = "right";
+    ctx.fillText(handle.charAt(0) === "@" ? handle : "@" + handle, W - 120, H - 150);
+  }
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6f665c";
+  ctx.font = "600 30px " + FONT;
+  ctx.fillText("made with pendingcard", 120, H - 88);
+}
+
+function postText() {
+  var inv = parseInvoices();
+  var total = inv.reduce(function (s, x) { return s + x.amount; }, 0);
+  var h = handleEl.value.trim();
+  var tag = h ? (h.charAt(0) === "@" ? h : "@" + h) + " " : "";
+  return tag + shortInr(total) + " of my money is pending with clients who owe me. How much of yours is stuck? Check: " + TOOL_URL;
+}
+
+document.getElementById("download").addEventListener("click", function () {
+  var a = document.createElement("a");
+  a.download = "money-pending.png";
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+});
+
+document.getElementById("postX").addEventListener("click", function () {
+  var text = postText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(function () {});
+  }
+  toast("Post text copied. Attach the downloaded image when you post.");
+  window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(text), "_blank");
+});
+
+[invoicesEl, handleEl].forEach(function (el) { el.addEventListener("input", draw); });
+draw();
+</script>
+</body>
+</html>
